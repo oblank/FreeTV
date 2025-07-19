@@ -27,6 +27,13 @@ class MainActivity : FragmentActivity() {
         webView.settings.allowContentAccess = true
         webView.settings.useWideViewPort = true
         webView.settings.loadWithOverviewMode = true
+        webView.settings.setSupportZoom(false)
+        webView.settings.builtInZoomControls = false
+        webView.settings.displayZoomControls = false
+        
+        webView.isFocusable = true
+        webView.isFocusableInTouchMode = true
+        webView.requestFocus()
         
         webView.addJavascriptInterface(FocusInterface(), "AndroidFocus")
         
@@ -60,6 +67,9 @@ class MainActivity : FragmentActivity() {
                       outline: none;
                       background-color: darkorange;
                       border: 2px solid red;
+                    }
+                    .header-box {
+                        display: none !important;
                     }
                 `;
                 document.head.appendChild(style);
