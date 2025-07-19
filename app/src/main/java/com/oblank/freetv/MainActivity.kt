@@ -3,6 +3,7 @@ package com.oblank.freetv
 import android.os.Bundle
 import android.view.KeyEvent
 import android.view.MotionEvent
+import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.fragment.app.FragmentActivity
@@ -11,6 +12,8 @@ class MainActivity : FragmentActivity() {
 
     private lateinit var webView: WebView
     private val scrollStep = 100
+    private var currentFocusIndex = 0
+    private var focusableElements = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -25,31 +28,76 @@ class MainActivity : FragmentActivity() {
         webView.settings.useWideViewPort = true
         webView.settings.loadWithOverviewMode = true
         
-        webView.webViewClient = WebViewClient()
+        webView.addJavascriptInterface(FocusInterface(), "AndroidFocus")
+        
+        webView.webViewClient = object : WebViewClient() {
+            override fun onPageFinished(view: WebView?, url: String?) {
+                super.onPageFinished(view, url)
+                injectFocusCSS()
+                initializeFocus()
+            }
+        }
         
         webView.loadUrl("https://www.55d4s8c8o6.shop/")
+    }
+
+    private fun injectFocusCSS() {
+        val css = """
+            javascript:(function() {
+                var style = document.createElement('style');
+                style.innerHTML = `
+                    .tv-focused {
+                        border: 2px solid red !important;
+                        box-sizing: border-box !important;
+                    }
+                    .module-poster-item, .module-item {
+                        transition: border 0.2s ease !important;
+                    }
+                    .fixedGroup, .small-icon-container {
+                        display: none !important;
+                    }
+                `;
+                document.head.appendChild(style);
+            })();
+        """
+        webView.loadUrl(css)
+    }
+
+    private fun initializeFocus() {
+        val js = """
+            javascript:(function() {
+                window.focusableElements = document.querySelectorAll('.module-poster-item, .module-item');
+                window.currentFocusIndex = 0;
+                if (window.focusableElements.length > 0) {
+                    window.focusableElements[0].classList.add('tv-focused');
+                    window.focusableElements[0].scrollIntoView({behavior: 'smooth', block: 'center'});
+                }
+                AndroidFocus.updateElementCount(window.focusableElements.length);
+            })();
+        """
+        webView.loadUrl(js)
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         when (keyCode) {
             KeyEvent.KEYCODE_DPAD_UP -> {
-                webView.scrollBy(0, -scrollStep)
+                navigateFocus(-1)
                 return true
             }
             KeyEvent.KEYCODE_DPAD_DOWN -> {
-                webView.scrollBy(0, scrollStep)
+                navigateFocus(1)
                 return true
             }
             KeyEvent.KEYCODE_DPAD_LEFT -> {
-                webView.scrollBy(-scrollStep, 0)
+                navigateFocus(-1)
                 return true
             }
             KeyEvent.KEYCODE_DPAD_RIGHT -> {
-                webView.scrollBy(scrollStep, 0)
+                navigateFocus(1)
                 return true
             }
             KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> {
-                simulateClick()
+                clickFocusedElement()
                 return true
             }
             KeyEvent.KEYCODE_BACK -> {
@@ -62,19 +110,42 @@ class MainActivity : FragmentActivity() {
         return super.onKeyDown(keyCode, event)
     }
 
-    private fun simulateClick() {
-        val x = webView.width / 2f
-        val y = webView.height / 2f
-        val downTime = System.currentTimeMillis()
-        val eventTime = System.currentTimeMillis()
-        
-        val downEvent = MotionEvent.obtain(downTime, eventTime, MotionEvent.ACTION_DOWN, x, y, 0)
-        val upEvent = MotionEvent.obtain(downTime, eventTime, MotionEvent.ACTION_UP, x, y, 0)
-        
-        webView.dispatchTouchEvent(downEvent)
-        webView.dispatchTouchEvent(upEvent)
-        
-        downEvent.recycle()
-        upEvent.recycle()
+    private fun navigateFocus(direction: Int) {
+        val js = """
+            javascript:(function() {
+                if (window.focusableElements && window.focusableElements.length > 0) {
+                    window.focusableElements[window.currentFocusIndex].classList.remove('tv-focused');
+                    
+                    window.currentFocusIndex += $direction;
+                    if (window.currentFocusIndex < 0) {
+                        window.currentFocusIndex = window.focusableElements.length - 1;
+                    } else if (window.currentFocusIndex >= window.focusableElements.length) {
+                        window.currentFocusIndex = 0;
+                    }
+                    
+                    window.focusableElements[window.currentFocusIndex].classList.add('tv-focused');
+                    window.focusableElements[window.currentFocusIndex].scrollIntoView({behavior: 'smooth', block: 'center'});
+                }
+            })();
+        """
+        webView.loadUrl(js)
+    }
+
+    private fun clickFocusedElement() {
+        val js = """
+            javascript:(function() {
+                if (window.focusableElements && window.currentFocusIndex < window.focusableElements.length) {
+                    window.focusableElements[window.currentFocusIndex].click();
+                }
+            })();
+        """
+        webView.loadUrl(js)
+    }
+
+    inner class FocusInterface {
+        @JavascriptInterface
+        fun updateElementCount(count: Int) {
+            focusableElements = count
+        }
     }
 }
