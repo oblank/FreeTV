@@ -71,7 +71,16 @@ class MainActivity : FragmentActivity() {
     private fun initializeFocus() {
         val js = """
             javascript:(function() {
-                window.focusableElements = document.querySelectorAll('.module-poster-item, .module-item');
+                // Add tabindex to all anchor elements
+                var allLinks = document.querySelectorAll('a[href]');
+                allLinks.forEach(function(link) {
+                    if (!link.hasAttribute('tabindex')) {
+                        link.setAttribute('tabindex', '0');
+                    }
+                });
+                
+                // Get all focusable elements including links and poster items
+                window.focusableElements = document.querySelectorAll('.module-poster-item, .module-item, a[href]');
                 window.currentFocusIndex = 0;
                 if (window.focusableElements.length > 0) {
                     window.focusableElements[0].classList.add('tv-focused');
