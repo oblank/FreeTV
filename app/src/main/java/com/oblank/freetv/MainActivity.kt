@@ -56,6 +56,11 @@ class MainActivity : FragmentActivity() {
                     .fixedGroup, .small-icon-container {
                         display: none !important;
                     }
+                    a:focus {
+                      outline: none;
+                      background-color: darkorange;
+                      border: 2px solid red;
+                    }
                 `;
                 document.head.appendChild(style);
             })();
