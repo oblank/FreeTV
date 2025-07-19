@@ -30,6 +30,7 @@ class MainActivity : FragmentActivity() {
         webView.settings.setSupportZoom(false)
         webView.settings.builtInZoomControls = false
         webView.settings.displayZoomControls = false
+        webView.settings.userAgentString = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         
         webView.isFocusable = true
         webView.isFocusableInTouchMode = true
@@ -68,7 +69,7 @@ class MainActivity : FragmentActivity() {
                       background-color: darkorange;
                       border: 2px solid red;
                     }
-                    .header-box {
+                    .header-box, .footer {
                         display: none !important;
                     }
                 `;
