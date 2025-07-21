@@ -46,7 +46,8 @@ class MainActivity : FragmentActivity() {
             }
         }
         
-        webView.loadUrl("https://www.55d4s8c8o6.shop/")
+//        webView.loadUrl("https://www.55d4s8c8o6.shop/")
+        webView.loadUrl("https://www.bestpipe.cn/")
     }
 
     private fun injectFocusCSS() {
@@ -70,6 +71,9 @@ class MainActivity : FragmentActivity() {
                       border: 2px solid red;
                     }
                     .header-box, .footer {
+                        display: none !important;
+                    }
+                    .ewave-banner-box {
                         display: none !important;
                     }
                 `;
