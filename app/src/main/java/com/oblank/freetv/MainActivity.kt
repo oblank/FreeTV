@@ -6,6 +6,7 @@ import android.view.MotionEvent
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.webkit.WebChromeClient
 import androidx.fragment.app.FragmentActivity
 
 class MainActivity : FragmentActivity() {
@@ -30,7 +31,18 @@ class MainActivity : FragmentActivity() {
         webView.settings.setSupportZoom(false)
         webView.settings.builtInZoomControls = false
         webView.settings.displayZoomControls = false
+        webView.settings.mediaPlaybackRequiresUserGesture = false
         webView.settings.userAgentString = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        
+        webView.webChromeClient = object : android.webkit.WebChromeClient() {
+            override fun onShowCustomView(view: android.view.View?, callback: android.webkit.WebChromeClient.CustomViewCallback?) {
+                super.onShowCustomView(view, callback)
+            }
+            
+            override fun onHideCustomView() {
+                super.onHideCustomView()
+            }
+        }
         
         webView.isFocusable = true
         webView.isFocusableInTouchMode = true
@@ -46,8 +58,7 @@ class MainActivity : FragmentActivity() {
             }
         }
         
-//        webView.loadUrl("https://www.55d4s8c8o6.shop/")
-        webView.loadUrl("https://www.bestpipe.cn/")
+webView.loadUrl("file:///android_asset/video_player.html")
     }
 
     private fun injectFocusCSS() {
