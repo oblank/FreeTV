@@ -185,6 +185,56 @@
                     break;
             }
         });
+
+        // Handle visibility changes for video playback control
+        let isPageVisible = true;
+        
+        function handleVisibilityChange() {
+            if (document.hidden || !isPageVisible) {
+                // Page is hidden - pause video and reset to 0s
+                console.log('Video WebView hidden - pausing and resetting');
+                video.pause();
+                video.currentTime = 0;
+            } else {
+                // Page is visible - play from beginning
+                console.log('Video WebView visible - starting from 0s');
+                video.currentTime = 0;
+                video.play().catch(e => {
+                    console.log('Auto-play prevented:', e);
+                    video.muted = true;
+                    video.play();
+                });
+            }
+        }
+
+        // Listen for page visibility changes
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        
+        // Also handle when the webview becomes active/inactive
+        window.addEventListener('focus', function() {
+            console.log('Video WebView focused');
+            isPageVisible = true;
+            handleVisibilityChange();
+        });
+        
+        window.addEventListener('blur', function() {
+            console.log('Video WebView blurred');
+            isPageVisible = false;
+            handleVisibilityChange();
+        });
+
+        // Initial play when loaded
+        video.addEventListener('loadeddata', function() {
+            console.log('Video loaded, ready to play');
+            if (isPageVisible) {
+                video.currentTime = 0;
+                video.play().catch(e => {
+                    console.log('Auto-play prevented:', e);
+                    video.muted = true;
+                    video.play();
+                });
+            }
+        });
         
         video.addEventListener('dblclick', toggleFullscreen);
         

@@ -15,7 +15,7 @@ class MainActivity : FragmentActivity() {
 
     private lateinit var webView1: WebView
     private lateinit var webView2: WebView
-    private var currentWebViewIndex = 0
+    private var currentWebViewIndex = 1
     private val webViews = mutableListOf<WebView>()
     
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -28,10 +28,10 @@ class MainActivity : FragmentActivity() {
         webViews.add(webView1)
         webViews.add(webView2)
         
-        setupWebView(webView1, "https://opcenter.huangjinx.com/#/quote")
-        setupWebView(webView2, "file:///android_asset/video_player.html")
+        setupWebView(webView1, "file:///android_asset/video_player.html")
+        setupWebView(webView2, "https://opcenter.huangjinx.com/#/quote")
         
-        // Set initial focus and visibility
+        // Set initial focus and visibility - show webView2 (index 1) by default
         webViews[currentWebViewIndex].visibility = View.VISIBLE
         webViews[currentWebViewIndex].requestFocus()
         webViews[(currentWebViewIndex + 1) % webViews.size].visibility = View.GONE
@@ -63,6 +63,22 @@ class MainActivity : FragmentActivity() {
         webView.webViewClient = WebViewClient()
         webView.isFocusable = true
         webView.isFocusableInTouchMode = true
+        
+        // Prevent WebView from consuming directional keys
+//        webView.setOnKeyListener { _, keyCode, event ->
+//            if (event.action == KeyEvent.ACTION_DOWN) {
+//                when (keyCode) {
+//                    KeyEvent.KEYCODE_DPAD_LEFT,
+//                    KeyEvent.KEYCODE_DPAD_RIGHT,
+//                    KeyEvent.KEYCODE_DPAD_UP,
+//                    KeyEvent.KEYCODE_DPAD_DOWN -> {
+//                        // Let Activity handle these keys
+//                        return@setOnKeyListener false
+//                    }
+//                }
+//            }
+//            return@setOnKeyListener false
+//        }
         
         webView.loadUrl(url)
     }
@@ -133,17 +149,25 @@ class MainActivity : FragmentActivity() {
             Log.d("WebViewSwitch", "  WebView $index visibility: ${webView.visibility}")
         }
         
-        // Hide current webview
+        // Hide current webview and handle video playback
         Log.d("WebViewSwitch", "Hiding webview $currentWebViewIndex")
+        if (currentWebViewIndex == 0) { // Video player is webview1 (index 0)
+            webViews[currentWebViewIndex].evaluateJavascript("handleVisibilityChange()", null)
+        }
         webViews[currentWebViewIndex].visibility = View.GONE
         webViews[currentWebViewIndex].clearFocus()
         
-        // Show new webview
+        // Show new webview and handle video playback
         Log.d("WebViewSwitch", "Showing webview $newIndex")
         currentWebViewIndex = newIndex
         webViews[currentWebViewIndex].visibility = View.VISIBLE
         webViews[currentWebViewIndex].requestFocus()
         webViews[currentWebViewIndex].bringToFront()
+        
+        // Handle video playback for video webview
+        if (newIndex == 0) { // Video player is webview1 (index 0)
+            webViews[currentWebViewIndex].evaluateJavascript("handleVisibilityChange()", null)
+        }
         
         // Log after switching
         Log.d("WebViewSwitch", "After switch:")
