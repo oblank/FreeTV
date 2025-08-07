@@ -90,15 +90,23 @@ class MainActivity : FragmentActivity() {
 
             Log.d("RemoteControl", "dispatchKeyEvent: $keyCode (${getKeyName(keyCode)})")
 
+            // Block all directional keys from reaching webview elements
             when (keyCode) {
-                KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_DPAD_UP -> {
-                    val newIndex = (currentWebViewIndex + 1) % webViews.size
-                    switchWebView(newIndex)
-                    return true
-                }
-                KeyEvent.KEYCODE_DPAD_RIGHT, KeyEvent.KEYCODE_DPAD_DOWN -> {
-                    val newIndex = (currentWebViewIndex + 1) % webViews.size
-                    switchWebView(newIndex)
+                KeyEvent.KEYCODE_DPAD_LEFT,
+                KeyEvent.KEYCODE_DPAD_RIGHT,
+                KeyEvent.KEYCODE_DPAD_UP,
+                KeyEvent.KEYCODE_DPAD_DOWN,
+                KeyEvent.KEYCODE_DPAD_CENTER,
+                KeyEvent.KEYCODE_ENTER -> {
+                    // Handle webview switching for directional keys
+                    if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT || 
+                        keyCode == KeyEvent.KEYCODE_DPAD_RIGHT ||
+                        keyCode == KeyEvent.KEYCODE_DPAD_UP ||
+                        keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
+                        val newIndex = (currentWebViewIndex + 1) % webViews.size
+                        switchWebView(newIndex)
+                    }
+                    // Consume all directional keys, prevent webview elements from responding
                     return true
                 }
                 KeyEvent.KEYCODE_BACK -> {
