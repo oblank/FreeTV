@@ -43,6 +43,20 @@
             font-family: Arial, sans-serif;
         }
         
+        .cover {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('https://gm-itrade-1255882558.cos.ap-guangzhou.myqcloud.com/GM_ITRADE/base/20241029/1339035pqfa6.svg');
+            background-size: contain;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-color: #000;
+            z-index: 10;
+        }
+        
         .controls {
             position: absolute;
             bottom: 20px;
@@ -51,6 +65,7 @@
             display: flex;
             gap: 20px;
             opacity: 0.8;
+            z-index: 20;
         }
         
         .control-btn {
@@ -70,6 +85,7 @@
 </head>
 <body>
     <div class="video-container">
+        <div class="cover" id="cover"></div>
         <video id="videoPlayer" autoplay muted loop playsinline>
             <source src="https://gm-itrade-1255882558.cos.ap-guangzhou.myqcloud.com/uploads/video/automaticAssemblyLine.mp4" type="video/mp4">
             您的浏览器不支持视频播放。
@@ -86,22 +102,27 @@
     <script>
         const video = document.getElementById('videoPlayer');
         const loading = document.getElementById('loading');
+        const cover = document.getElementById('cover');
         
         video.addEventListener('loadeddata', function() {
             loading.style.display = 'none';
+            cover.style.display = 'none';
             video.play();
         });
         
         video.addEventListener('loadstart', function() {
             loading.style.display = 'block';
+            cover.style.display = 'block';
         });
         
         video.addEventListener('canplay', function() {
             loading.style.display = 'none';
+            cover.style.display = 'none';
         });
         
         video.addEventListener('error', function(e) {
             loading.textContent = '视频加载失败，请重试';
+            cover.style.display = 'block';
             console.error('Video loading error:', e);
         });
         
