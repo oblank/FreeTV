@@ -1,22 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     android:background="#000000"
     tools:context=".MainActivity"
     tools:deviceIds="tv">
 
     <WebView
-        android:id="@+id/webview"
+        android:id="@+id/webview1"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:focusable="true"
+        android:focusableInTouchMode="true" />
+
+    <WebView
+        android:id="@+id/webview2"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:focusable="true"
         android:focusableInTouchMode="true"
-        android:nextFocusUp="@+id/webview"
-        android:nextFocusDown="@+id/webview"
-        android:nextFocusLeft="@+id/webview"
-        android:nextFocusRight="@+id/webview" />
+        android:visibility="gone" />
 
-</LinearLayout>
+</FrameLayout>

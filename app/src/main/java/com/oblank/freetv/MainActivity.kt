@@ -1,27 +1,52 @@
 package com.oblank.freetv
 
 import android.os.Bundle
+import android.util.Log
 import android.view.KeyEvent
-import android.view.MotionEvent
+import android.view.View
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.webkit.WebChromeClient
+import android.widget.Toast
 import androidx.fragment.app.FragmentActivity
 
 class MainActivity : FragmentActivity() {
 
-    private lateinit var webView: WebView
-    private val scrollStep = 100
-    private var currentFocusIndex = 0
-    private var focusableElements = 0
-
+    private lateinit var webView1: WebView
+    private lateinit var webView2: WebView
+    private var currentWebViewIndex = 0
+    private val webViews = mutableListOf<WebView>()
+    
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        webView = findViewById(R.id.webview)
+        webView1 = findViewById(R.id.webview1)
+        webView2 = findViewById(R.id.webview2)
         
+        webViews.add(webView1)
+        webViews.add(webView2)
+        
+        setupWebView(webView1, "https://opcenter.huangjinx.com/#/quote")
+        setupWebView(webView2, "file:///android_asset/video_player.html")
+        
+        // Set initial focus and visibility
+        webViews[currentWebViewIndex].visibility = View.VISIBLE
+        webViews[currentWebViewIndex].requestFocus()
+        webViews[(currentWebViewIndex + 1) % webViews.size].visibility = View.GONE
+        
+        // Ensure the activity can receive key events
+        window.decorView.requestFocus()
+    }
+    
+    override fun onResume() {
+        super.onResume()
+        // Ensure current webview has focus when activity resumes
+        webViews[currentWebViewIndex].requestFocus()
+    }
+    
+    private fun setupWebView(webView: WebView, url: String) {
         webView.settings.javaScriptEnabled = true
         webView.settings.domStorageEnabled = true
         webView.settings.allowFileAccess = true
@@ -34,158 +59,99 @@ class MainActivity : FragmentActivity() {
         webView.settings.mediaPlaybackRequiresUserGesture = false
         webView.settings.userAgentString = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         
-        webView.webChromeClient = object : android.webkit.WebChromeClient() {
-            override fun onShowCustomView(view: android.view.View?, callback: android.webkit.WebChromeClient.CustomViewCallback?) {
-                super.onShowCustomView(view, callback)
-            }
-            
-            override fun onHideCustomView() {
-                super.onHideCustomView()
-            }
-        }
-        
+        webView.webChromeClient = WebChromeClient()
+        webView.webViewClient = WebViewClient()
         webView.isFocusable = true
         webView.isFocusableInTouchMode = true
-        webView.requestFocus()
         
-        webView.addJavascriptInterface(FocusInterface(), "AndroidFocus")
-        
-        webView.webViewClient = object : WebViewClient() {
-            override fun onPageFinished(view: WebView?, url: String?) {
-                super.onPageFinished(view, url)
-                injectFocusCSS()
-                initializeFocus()
-            }
-        }
-        
-webView.loadUrl("file:///android_asset/video_player.html")
+        webView.loadUrl(url)
     }
 
-    private fun injectFocusCSS() {
-        val css = """
-            javascript:(function() {
-                var style = document.createElement('style');
-                style.innerHTML = `
-                    .tv-focused {
-                        border: 2px solid red !important;
-                        box-sizing: border-box !important;
-                    }
-                    .module-poster-item, .module-item {
-                        transition: border 0.2s ease !important;
-                    }
-                    .fixedGroup, .small-icon-container {
-                        display: none !important;
-                    }
-                    a:focus {
-                      outline: none;
-                      background-color: darkorange;
-                      border: 2px solid red;
-                    }
-                    .header-box, .footer {
-                        display: none !important;
-                    }
-                    .ewave-banner-box {
-                        display: none !important;
-                    }
-                `;
-                document.head.appendChild(style);
-            })();
-        """
-        webView.loadUrl(css)
-    }
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (event.action == KeyEvent.ACTION_DOWN) {
+            val keyCode = event.keyCode
+            val currentWebView = webViews[currentWebViewIndex]
 
-    private fun initializeFocus() {
-        val js = """
-            javascript:(function() {
-                // Add tabindex to all anchor elements
-                var allLinks = document.querySelectorAll('a[href]');
-                allLinks.forEach(function(link) {
-                    if (!link.hasAttribute('tabindex')) {
-                        link.setAttribute('tabindex', '0');
-                    }
-                });
-                
-                // Get all focusable elements including links and poster items
-                window.focusableElements = document.querySelectorAll('.module-poster-item, .module-item, a[href]');
-                window.currentFocusIndex = 0;
-                if (window.focusableElements.length > 0) {
-                    window.focusableElements[0].classList.add('tv-focused');
-                    window.focusableElements[0].scrollIntoView({behavior: 'smooth', block: 'center'});
-                }
-                AndroidFocus.updateElementCount(window.focusableElements.length);
-            })();
-        """
-        webView.loadUrl(js)
-    }
+            Log.d("RemoteControl", "dispatchKeyEvent: $keyCode (${getKeyName(keyCode)})")
 
-    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
-        when (keyCode) {
-            KeyEvent.KEYCODE_DPAD_UP -> {
-                navigateFocus(-1)
-                return true
-            }
-            KeyEvent.KEYCODE_DPAD_DOWN -> {
-                navigateFocus(1)
-                return true
-            }
-            KeyEvent.KEYCODE_DPAD_LEFT -> {
-                navigateFocus(-1)
-                return true
-            }
-            KeyEvent.KEYCODE_DPAD_RIGHT -> {
-                navigateFocus(1)
-                return true
-            }
-            KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> {
-                clickFocusedElement()
-                return true
-            }
-            KeyEvent.KEYCODE_BACK -> {
-                if (webView.canGoBack()) {
-                    webView.goBack()
+            when (keyCode) {
+                KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_DPAD_UP -> {
+                    val newIndex = (currentWebViewIndex + 1) % webViews.size
+                    switchWebView(newIndex)
                     return true
                 }
+                KeyEvent.KEYCODE_DPAD_RIGHT, KeyEvent.KEYCODE_DPAD_DOWN -> {
+                    val newIndex = (currentWebViewIndex + 1) % webViews.size
+                    switchWebView(newIndex)
+                    return true
+                }
+                KeyEvent.KEYCODE_BACK -> {
+                    if (currentWebView.canGoBack()) {
+                        currentWebView.goBack()
+                        return true
+                    }
+                }
             }
         }
-        return super.onKeyDown(keyCode, event)
+        return super.dispatchKeyEvent(event)
     }
 
-    private fun navigateFocus(direction: Int) {
-        val js = """
-            javascript:(function() {
-                if (window.focusableElements && window.focusableElements.length > 0) {
-                    window.focusableElements[window.currentFocusIndex].classList.remove('tv-focused');
-                    
-                    window.currentFocusIndex += $direction;
-                    if (window.currentFocusIndex < 0) {
-                        window.currentFocusIndex = window.focusableElements.length - 1;
-                    } else if (window.currentFocusIndex >= window.focusableElements.length) {
-                        window.currentFocusIndex = 0;
-                    }
-                    
-                    window.focusableElements[window.currentFocusIndex].classList.add('tv-focused');
-                    window.focusableElements[window.currentFocusIndex].scrollIntoView({behavior: 'smooth', block: 'center'});
-                }
-            })();
-        """
-        webView.loadUrl(js)
-    }
 
-    private fun clickFocusedElement() {
-        val js = """
-            javascript:(function() {
-                if (window.focusableElements && window.currentFocusIndex < window.focusableElements.length) {
-                    window.focusableElements[window.currentFocusIndex].click();
-                }
-            })();
-        """
-        webView.loadUrl(js)
-    }
-
-    inner class FocusInterface {
-        @JavascriptInterface
-        fun updateElementCount(count: Int) {
-            focusableElements = count
+    private fun getKeyName(keyCode: Int): String {
+        return when (keyCode) {
+            KeyEvent.KEYCODE_DPAD_LEFT -> "LEFT"
+            KeyEvent.KEYCODE_DPAD_RIGHT -> "RIGHT"
+            KeyEvent.KEYCODE_DPAD_UP -> "UP"
+            KeyEvent.KEYCODE_DPAD_DOWN -> "DOWN"
+            KeyEvent.KEYCODE_DPAD_CENTER -> "CENTER"
+            KeyEvent.KEYCODE_ENTER -> "ENTER"
+            KeyEvent.KEYCODE_BACK -> "BACK"
+            else -> "KEY_$keyCode"
         }
+    }
+    
+    override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
+        Log.d("KeyEvent", "Key up: $keyCode")
+        return super.onKeyUp(keyCode, event)
+    }
+    
+    private fun switchWebView(newIndex: Int) {
+        // Validate index
+        if (newIndex < 0 || newIndex >= webViews.size) {
+            Log.d("WebViewSwitch", "Invalid index: $newIndex")
+            return
+        }
+        
+        Log.d("WebViewSwitch", "=== SWITCHING WEBVIEW ===")
+        Log.d("WebViewSwitch", "From: $currentWebViewIndex, To: $newIndex")
+        
+        val webviewNames = arrayOf("Video Player", "Trading Platform")
+        
+        // Log before switching
+        Log.d("WebViewSwitch", "Before switch:")
+        webViews.forEachIndexed { index, webView ->
+            Log.d("WebViewSwitch", "  WebView $index visibility: ${webView.visibility}")
+        }
+        
+        // Hide current webview
+        Log.d("WebViewSwitch", "Hiding webview $currentWebViewIndex")
+        webViews[currentWebViewIndex].visibility = View.GONE
+        webViews[currentWebViewIndex].clearFocus()
+        
+        // Show new webview
+        Log.d("WebViewSwitch", "Showing webview $newIndex")
+        currentWebViewIndex = newIndex
+        webViews[currentWebViewIndex].visibility = View.VISIBLE
+        webViews[currentWebViewIndex].requestFocus()
+        webViews[currentWebViewIndex].bringToFront()
+        
+        // Log after switching
+        Log.d("WebViewSwitch", "After switch:")
+        webViews.forEachIndexed { index, webView ->
+            Log.d("WebViewSwitch", "  WebView $index visibility: ${webView.visibility}")
+        }
+        
+        Toast.makeText(this, "Switched to: ${webviewNames[newIndex]}", Toast.LENGTH_SHORT).show()
+        Log.d("WebViewSwitch", "=== SWITCH COMPLETE ===")
     }
 }
