@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.oblank.freetv"
+    namespace = "com.goldmorning.bigscreen02"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.oblank.freetv"
+        applicationId = "com.goldmorning.bigscreen02"
         minSdk = 21
         targetSdk = 36
         versionCode = 1

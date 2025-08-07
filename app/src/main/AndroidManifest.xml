@@ -18,7 +18,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.FreeTV">
         <activity
-            android:name=".MainActivity"
+            android:name="com.goldmorning.bigscreen02.MainActivity"
             android:banner="@drawable/icon"
             android:exported="true"
             android:icon="@drawable/icon"

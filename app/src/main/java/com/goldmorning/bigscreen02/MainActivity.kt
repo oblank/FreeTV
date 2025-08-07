@@ -1,4 +1,4 @@
-package com.oblank.freetv
+package com.goldmorning.bigscreen02
 
 import android.os.Bundle
 import android.util.Log
